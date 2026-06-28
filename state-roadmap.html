@@ -7,6 +7,7 @@
 <meta name="description" content="A minimal strawman roadmap of Ethereum state proposals — lanes by what they do to state, forks left to right." />
 
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 
 <style type="text/tailwindcss">
   @import "tailwindcss";
@@ -32,8 +33,7 @@
   @layer components {
     .roadmap {
       display: grid;
-      grid-template-columns: 184px repeat(5, minmax(188px, 1fr)) 196px;
-      min-width: 1320px;
+      /* column tracks + min-width are set per-mode in JS (gridStyle) */
     }
 
     .scroll-x { overflow: auto; max-height: min(82dvh, 1100px); }
@@ -86,17 +86,52 @@
 
     .tile-soft { background: transparent; box-shadow: none; outline: 1px dashed var(--color-slate-300); outline-offset: -1px; opacity: 0.7; }
     .tile-soft .ttl { font-size: 15px; font-weight: 500; color: var(--color-slate-500); }
+
+    /* ---- edit mode ---- */
+    body.editing footer { display: none; }
+    body.editing .cell { min-height: 72px; gap: --spacing(2.5); }
+    .etile { background: var(--color-white); border-radius: var(--radius-xl); padding: --spacing(2.5); box-shadow: 0 1px 2px rgb(2 6 23 / 0.06); display: flex; flex-direction: column; gap: --spacing(1.5); }
+    .etile .erow { display: flex; align-items: center; gap: --spacing(1.5); }
+    .grip { cursor: grab; color: var(--color-slate-400); font-size: 13px; line-height: 1; user-select: none; padding: 0 2px; }
+    .grip:active { cursor: grabbing; }
+    .etile input, .etile select { font: inherit; font-size: 12.5px; border: 1px solid var(--color-slate-200); border-radius: var(--radius-md); padding: 2px 6px; background: var(--color-white); color: var(--color-slate-900); min-width: 0; }
+    .etile input:focus, .etile select:focus { outline: 2px solid color-mix(in oklab, var(--accent) 45%, white); border-color: transparent; }
+    .etile .eid { width: 72px; flex: none; font-weight: 600; }
+    .etile .kindsel { flex: 1; min-width: 0; }
+    .etile .ein { width: 100%; }
+    .etile .del { margin-left: auto; flex: none; border: none; background: none; color: #e11d48; cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 6px; }
+    .etile .del:hover { background: color-mix(in oklab, #e11d48 12%, white); }
+    .addtile { width: 100%; border: 1.5px dashed color-mix(in oklab, var(--accent) 35%, var(--color-slate-300)); color: color-mix(in oklab, var(--accent) 62%, var(--color-slate-600)); background: none; border-radius: var(--radius-lg); padding: --spacing(2); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .addtile:hover { background: color-mix(in oklab, var(--accent) 9%, white); }
+    .ghost { opacity: 0.4; }
+    .ebtn { font-size: 13px; font-weight: 600; padding: --spacing(1.5) --spacing(3); border-radius: var(--radius-lg); border: 1px solid var(--color-slate-200); background: var(--color-white); color: var(--color-slate-700); cursor: pointer; }
+    .ebtn:hover { background: var(--color-slate-50); }
+    .ebtn-primary { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-white); }
+    .ebtn-primary:hover { background: #1e293b; }
   }
 </style>
 </head>
 
 <body class="min-h-dvh bg-slate-50 font-sans text-slate-900 antialiased">
 
-  <header class="mx-auto max-w-[1580px] px-6 pt-12 pb-7">
-    <h1 class="text-3xl/10 font-semibold tracking-tight sm:text-4xl">Ethereum State Roadmap</h1>
+  <header class="mx-auto max-w-[1580px] px-6 pt-12 pb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-3xl/10 font-semibold tracking-tight sm:text-4xl">Ethereum State Roadmap</h1>
+      <div class="flex items-center gap-2">
+        <span id="status" class="mr-1 hidden text-sm/6 text-slate-400"></span>
+        <span id="editTools" class="hidden items-center gap-2">
+          <button id="downloadBtn" class="ebtn ebtn-primary">Download</button>
+          <button id="copyBtn" class="ebtn">Copy JSON</button>
+          <button id="resetBtn" class="ebtn">Reset</button>
+        </span>
+        <button id="editToggle" class="ebtn ebtn-primary">Edit</button>
+      </div>
+    </div>
     <p id="draftNote" class="mt-3 hidden text-sm/6 text-slate-500">
-      <span class="lbl font-semibold">○ Showing committed file</span> · you have an editor draft ·
-      <button id="useFile" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-900">preview it</button>
+      ○ Showing your local edits · <button id="resetLink" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-900">reset to published</button>
+    </p>
+    <p id="editHint" class="mt-3 hidden text-sm/6 text-slate-500">
+      Drag the <span class="font-semibold">⠿</span> handle to move tiles · edit fields inline · <span class="font-semibold">+ add</span> in any cell · <span class="font-semibold">Download</span> saves your <code class="rounded bg-slate-100 px-1">roadmap-data.js</code>.
     </p>
   </header>
 
@@ -116,81 +151,195 @@
 
 <script src="roadmap-data.js"></script>
 <script>
-// Data comes from roadmap-data.js (window.ROADMAP). If you've arranged tiles in the
-// editor, this browser's saved draft is shown automatically (toggle in the header).
+/* roadmap-data.js (window.ROADMAP) is the published source of truth.
+   The page is read-only until you click "Edit". Edits autosave to this browser
+   and can be downloaded as a new roadmap-data.js. */
 const LS = "stateRoadmapLayout.v1";
-function readDraft(){
-  try { const r = localStorage.getItem(LS); const a = r && JSON.parse(r); return (Array.isArray(a) && a.length) ? a : null; }
-  catch { return null; }
-}
+const { E, M, FORKS, LANES } = window.ROADMAP;
 
-const { FORKS, LANES } = window.ROADMAP;
-const DRAFT = readDraft();
-let ITEMS = window.ROADMAP.ITEMS;  // committed roadmap-data.js is authoritative; editor draft is an opt-in preview
-
-const KIND = { headliner:"tile-headliner", northstar:"tile-northstar", soft:"tile-soft" };
-
-function isEip(id){ return /^\d+$/.test(id); }
-
+const KIND  = { headliner:"tile-headliner", northstar:"tile-northstar", soft:"tile-soft" };
+const KINDS = [ ["","Draft"], ["headliner","Headliner"], ["northstar","North star"], ["soft","Research"] ];
 const CONFIRMED = new Set(FORKS.filter(f => f.confirmed).map(f => f.id));
+const VFORKS = FORKS.filter(f => f.id !== "superseded");        // view mode hides the archive column
+const LNAME = Object.fromEntries(LANES.map(l => [l.id, l.name]));
+const LIDX  = Object.fromEntries(LANES.map((l,i) => [l.id, i]));
+const FIDX  = Object.fromEntries(FORKS.map((f,i) => [f.id, i]));
 
-function tile(it){
+const $ = s => document.querySelector(s);
+const grid = $("#roadmap"), statusEl = $("#status"), draftNote = $("#draftNote"), editHint = $("#editHint");
+
+const isEip = id => /^\d+$/.test(id);
+const esc = s => String(s==null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+let uidc = 1;
+const withUid = items => items.map(it => ({ ...it, _uid: uidc++ }));
+const clean = () => WORKING.map(({ _uid, ...r }) => r);
+function readDraft(){ try { const r = localStorage.getItem(LS); const a = r && JSON.parse(r); return (Array.isArray(a) && a.length) ? a : null; } catch { return null; } }
+function save(){ try { localStorage.setItem(LS, JSON.stringify(clean())); } catch {} if (editing) flash("saved ✓", true); }
+
+let WORKING = withUid(readDraft() || window.ROADMAP.ITEMS);
+let editing = false;
+let sortables = [];
+
+/* ---------- tiles ---------- */
+function tileView(it){
   const ok = CONFIRMED.has(it.fork);
   const label = isEip(it.id) ? `EIP-${it.id}` : (it.kind === "northstar" ? "north star" : it.id);
-  const kick = `<span class="dot"></span>${label}${ok ? `<span class="chk">✓</span>` : ""}`;
-  return `<a class="tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""}" href="${it.link}" target="_blank" rel="noreferrer" title="${it.sum}">
-      <div class="kick">${kick}</div>
-      <div class="ttl">${it.title}</div>
-    </a>`;
+  const kick = `<span class="dot"></span>${esc(label)}${ok ? `<span class="chk">✓</span>` : ""}`;
+  const a = it.link ? `href="${esc(it.link)}" target="_blank" rel="noreferrer"` : "";
+  return `<a class="tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""}" ${a} title="${esc(it.sum||"")}">
+      <div class="kick">${kick}</div><div class="ttl">${esc(it.title)}</div></a>`;
+}
+function tileEdit(it){
+  const opts = KINDS.map(([v,l]) => `<option value="${v}"${(it.kind||"")===v ? " selected" : ""}>${l}</option>`).join("");
+  return `<div class="etile" data-uid="${it._uid}">
+      <div class="erow">
+        <span class="grip" title="drag to move">⠿</span>
+        <input class="eid" data-f="id" value="${esc(it.id)}" placeholder="EIP # / name" />
+        <select class="kindsel" data-f="kind">${opts}</select>
+        <button class="del" title="remove tile">✕</button>
+      </div>
+      <input class="ein" data-f="title" value="${esc(it.title)}" placeholder="Title" />
+      <input class="ein" data-f="link" value="${esc(it.link||"")}" placeholder="https://… link (optional)" />
+    </div>`;
 }
 
-function tileMini(it){
-  const label = isEip(it.id) ? `EIP-${it.id}` : it.id;
-  return `<a class="tile-mini" href="${it.link}" target="_blank" rel="noreferrer" title="${it.sum}"><span class="me">${label}</span> ${it.title}</a>`;
+/* ---------- render ---------- */
+function gridStyle(forks){
+  const w = f => f.id === "northstar" ? 200 : f.id === "superseded" ? 180 : 188;
+  grid.style.gridTemplateColumns = "184px " + forks.map(f => f.id==="northstar" ? "200px" : f.id==="superseded" ? "180px" : "minmax(188px, 1fr)").join(" ");
+  grid.style.minWidth = (184 + forks.reduce((a,f) => a + w(f), 0)) + "px";
 }
-
-// Forks shown in the viewer. "superseded" is an archive bucket — managed in the editor, hidden here.
-const VFORKS = FORKS.filter(f => f.id !== "superseded");
-
 function build(){
-  const g = document.getElementById("roadmap");
+  const forks = editing ? FORKS : VFORKS;
+  gridStyle(forks);
   const out = [`<div class="corner head-line"></div>`];
-
-  for (const f of VFORKS){
-    out.push(`<div class="fhead head-line px-4 py-4 ${f.sep?"fork-sep":""}" data-confirmed="${!!f.confirmed}">
-        <div class="text-lg/6 font-semibold tracking-tight text-slate-900">${f.name}</div>
+  for (const f of forks){
+    const muted = !!f.muted;
+    out.push(`<div class="fhead head-line px-4 py-4 ${f.sep?"fork-sep":""}" data-confirmed="${!!f.confirmed}" data-muted="${muted}">
+        <div class="${muted?"text-base/6 text-slate-400":"text-lg/6 text-slate-900"} font-semibold tracking-tight">${f.name}</div>
       </div>`);
   }
-
   for (const lane of LANES){
     out.push(`<div class="llabel row-line px-4 py-4" style="--accent:${lane.color}">
-        <div class="flex items-center gap-2">
-          <span class="dot"></span>
-          <span class="text-[15px]/5 font-semibold" style="color:${lane.color}">${lane.name}</span>
-        </div>
+        <div class="flex items-center gap-2"><span class="dot"></span><span class="text-[15px]/5 font-semibold" style="color:${lane.color}">${lane.name}</span></div>
       </div>`);
-    for (const f of VFORKS){
-      const body = ITEMS.filter(it => it.lane===lane.id && it.fork===f.id).map(tile).join("");
-      out.push(`<div class="cell row-line ${f.sep?"fork-sep":""}" style="--accent:${lane.color}">${body}</div>`);
+    for (const f of forks){
+      const items = WORKING.filter(it => it.lane===lane.id && it.fork===f.id);
+      const body = items.map(editing ? tileEdit : tileView).join("");
+      const add = editing ? `<button class="addtile" data-lane="${lane.id}" data-fork="${f.id}">+ add</button>` : "";
+      out.push(`<div class="cell row-line ${f.sep?"fork-sep":""}" data-lane="${lane.id}" data-fork="${f.id}" style="--accent:${lane.color}">${body}${add}</div>`);
     }
   }
-  g.innerHTML = out.join("");
+  grid.innerHTML = out.join("");
+  if (editing) initSortable();
 }
-build();
 
-if (DRAFT) {
-  const note = document.getElementById("draftNote");
-  const btn = document.getElementById("useFile");
-  note.classList.remove("hidden");
-  let onDraft = false;
-  btn.onclick = () => {
-    onDraft = !onDraft;
-    ITEMS = onDraft ? DRAFT : window.ROADMAP.ITEMS;
-    build();
-    note.querySelector(".lbl").textContent = onDraft ? "● Previewing editor draft" : "○ Showing committed file";
-    btn.textContent = onDraft ? "show committed file" : "preview editor draft";
-  };
+/* ---------- editing ---------- */
+function initSortable(){
+  sortables.forEach(s => s.destroy()); sortables = [];
+  if (typeof Sortable === "undefined") return;   // CDN unavailable → inputs/add/delete still work
+  grid.querySelectorAll(".cell").forEach(cell => sortables.push(Sortable.create(cell, {
+    group: "roadmap", handle: ".grip", draggable: ".etile", animation: 150, ghostClass: "ghost", onEnd: syncFromDOM,
+  })));
 }
+function syncFromDOM(){
+  const order = [];
+  grid.querySelectorAll(".cell").forEach(cell => {
+    cell.querySelectorAll(".etile").forEach(el => {
+      const it = WORKING.find(i => String(i._uid) === el.dataset.uid);
+      if (it){ it.lane = cell.dataset.lane; it.fork = cell.dataset.fork; order.push(it); }
+    });
+  });
+  if (order.length === WORKING.length) WORKING = order;
+  save();
+}
+function onField(e){
+  const el = e.target.closest("[data-f]"); if (!el) return;
+  const et = el.closest(".etile"); if (!et) return;
+  const it = WORKING.find(i => String(i._uid) === et.dataset.uid); if (!it) return;
+  if (el.dataset.f === "kind") it.kind = el.value || undefined; else it[el.dataset.f] = el.value;
+  save();
+}
+grid.addEventListener("input", onField);
+grid.addEventListener("change", onField);
+grid.addEventListener("click", e => {
+  const del = e.target.closest(".del");
+  if (del){ const et = del.closest(".etile"); WORKING = WORKING.filter(i => String(i._uid) !== et.dataset.uid); et.remove(); save(); return; }
+  const add = e.target.closest(".addtile");
+  if (add){
+    const it = { lane: add.dataset.lane, fork: add.dataset.fork, id:"", title:"New tile", link:"", _uid: uidc++ };
+    WORKING.push(it); build(); save();
+    const inp = grid.querySelector(`.etile[data-uid="${it._uid}"] input[data-f="title"]`);
+    if (inp){ inp.focus(); inp.select(); }
+  }
+});
+
+/* ---------- toolbar ---------- */
+function setMode(on){
+  editing = on;
+  document.body.classList.toggle("editing", on);
+  $("#editToggle").textContent = on ? "Done" : "Edit";
+  $("#editTools").classList.toggle("hidden", !on);
+  $("#editTools").classList.toggle("flex", on);
+  editHint.classList.toggle("hidden", !on);
+  if (on) flash("saved ✓", true); else statusEl.classList.add("hidden");
+  if (!on){ sortables.forEach(s => s.destroy()); sortables = []; }
+  build(); updateNote();
+}
+function reset(){
+  if (!confirm("Discard your local edits and return to the published roadmap?")) return;
+  try { localStorage.removeItem(LS); } catch {}
+  WORKING = withUid(window.ROADMAP.ITEMS); build(); updateNote();
+}
+function updateNote(){ draftNote.classList.toggle("hidden", editing || !readDraft()); }
+
+$("#editToggle").onclick = () => setMode(!editing);
+$("#downloadBtn").onclick = () => { downloadText("roadmap-data.js", buildDataFile()); flash("downloaded ✓"); };
+$("#copyBtn").onclick = () => copyText(JSON.stringify(clean(), null, 2), "JSON copied ✓");
+$("#resetBtn").onclick = reset;
+$("#resetLink").onclick = reset;
+
+let flashT;
+function flash(msg, sticky){
+  statusEl.textContent = msg; statusEl.classList.remove("hidden");
+  clearTimeout(flashT);
+  if (!sticky) flashT = setTimeout(() => { if (editing) statusEl.textContent = "saved ✓"; else statusEl.classList.add("hidden"); }, 1500);
+}
+
+/* ---------- export (build a fresh roadmap-data.js) ---------- */
+function linkExpr(link){ if (!link) return '""'; if (link.startsWith(E)) return 'E+'+JSON.stringify(link.slice(E.length)); if (link.startsWith(M)) return 'M+'+JSON.stringify(link.slice(M.length)); return JSON.stringify(link); }
+function serialize(it){ let s = `{ lane:${JSON.stringify(it.lane)}, fork:${JSON.stringify(it.fork)}, id:${JSON.stringify(it.id)}, title:${JSON.stringify(it.title)}, link:${linkExpr(it.link)}`; if (it.kind) s += `, kind:${JSON.stringify(it.kind)}`; s += `, sum:${JSON.stringify(it.sum||"")} },`; return s; }
+function itemsArrayJS(){
+  const arr = clean().map((it,i) => [it,i]).sort((a,b) => (LIDX[a[0].lane]-LIDX[b[0].lane]) || (FIDX[a[0].fork]-FIDX[b[0].fork]) || (a[1]-b[1])).map(x => x[0]);
+  let out = "[\n", cur = null;
+  for (const it of arr){ if (it.lane !== cur){ cur = it.lane; out += `\n    // ${it.lane} — ${LNAME[it.lane]||""}\n`; } out += "    " + serialize(it) + "\n"; }
+  return out + "  ]";
+}
+const jsLit = x => JSON.stringify(x, null, 2).replace(/\n/g, "\n  ");
+function buildDataFile(){
+  return `/* roadmap-data.js — single source of truth for the Ethereum State Roadmap.
+ * Loaded by state-roadmap.html. Regenerate via the page's Edit mode → Download.
+ */
+(function () {
+  const E = ${JSON.stringify(E)};
+  const M = ${JSON.stringify(M)};
+
+  const FORKS = ${jsLit(FORKS)};
+
+  const LANES = ${jsLit(LANES)};
+
+  const ITEMS = ${itemsArrayJS()};
+
+  window.ROADMAP = { E, M, FORKS, LANES, ITEMS };
+})();
+`;
+}
+async function copyText(t, ok){ try { await navigator.clipboard.writeText(t); flash(ok); } catch { flash("copy failed — use Download"); } }
+function downloadText(name, text){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type:"text/plain" })); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
+
+build();
+updateNote();
 </script>
 </body>
 </html>

@@ -88,10 +88,12 @@
     { lane:"A", fork:"i", id:"8058", title:"Bytecode Dedup Discount", link:M+"eip-8058-contract-bytecode-deduplication-discount/25933", kind:"soft", sum:"Redeploying identical bytecode skips the code-deposit cost." },
     { lane:"A", fork:"northstar", id:"Sustainable state growth", title:"Sustainable state growth", link:E+"8037", kind:"northstar", sum:"New state pays its full lifetime cost — growth stays within what nodes can store." },
 
+    // (bridge) sits between Curb State Growth & Honest Access Pricing — fits both
+    { lane:"AB", fork:"hegota", id:"7999", title:"Multidimensional Fee Market", link:E+"7999", sum:"One max_fee fungible across resource dimensions (calldata first) under a unified base-fee update." },
+
     // B — Honest Access Pricing
     { lane:"B", fork:"glamsterdam", id:"8038", title:"State-Access Cost Update", link:M+"eip-8038-state-access-gas-cost-update/25693", sum:"Raises cold SLOAD / account / EXTCODE costs for a larger state." },
     { lane:"B", fork:"hegota", id:"7907", title:"Meter Code Size", link:M+"eip-remove-contract-size-limit/23156", kind:"soft", sum:"Gas-meters code above 24KB and lifts the cap to 64KB." },
-    { lane:"B", fork:"hegota", id:"7999", title:"Multidimensional Fee Market", link:E+"7999", sum:"One max_fee fungible across resource dimensions (calldata first) under a unified base-fee update." },
     { lane:"B", fork:"northstar", id:"Right-priced access", title:"Right-priced access", link:M+"eip-8038-state-access-gas-cost-update/25693", kind:"northstar", sum:"Every state access is priced at its true cost — no under- or over-pricing." },
     { lane:"B", fork:"superseded", id:"8057", title:"Inter-Block Locality", link:M+"eip-8057-block-temporal-locality-gas-discounts/25912", kind:"soft", sum:"Discounts first access by how recently the item was touched." },
     { lane:"B", fork:"superseded", id:"7863", title:"Block-Level Warming", link:M+"eip-7863-block-level-warming/22572", kind:"soft", sum:"Touched state stays warm for the whole block (warm set from the BAL)." },

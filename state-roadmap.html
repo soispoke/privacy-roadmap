@@ -48,6 +48,17 @@
 
     .cell { display: flex; flex-direction: column; gap: --spacing(3); padding: --spacing(4) --spacing(3); background: color-mix(in oklab, var(--accent) 6%, white); }
 
+    /* the last lane — stronger, distinct treatment */
+    .llabel.lane-special { background: color-mix(in oklab, var(--accent) 22%, white); }
+    .cell.lane-special { background: color-mix(in oklab, var(--accent) 12%, white); }
+    .llabel.lane-special, .cell.lane-special { border-top: 2px solid color-mix(in oklab, var(--accent) 45%, white); }
+    .lane-star { margin-left: 2px; font-weight: 800; color: var(--accent); }
+
+    /* bridge row — one tile sitting between two lanes (belongs to both) */
+    .bridge-label { background: var(--color-white); }
+    .bridge-cell { background: transparent; padding: --spacing(2) --spacing(3); }
+    .tile-bridge { box-shadow: inset 0 3px 0 0 var(--color-laneA), inset 0 -3px 0 0 var(--color-laneB), 0 1px 2px rgb(2 6 23 / 0.05); }
+
     /* superseded column — set aside, neutral & minimal */
     .fork-sep { border-left: 2px solid var(--color-slate-200); }
     .fhead[data-muted="true"] { background: var(--color-slate-50); }
@@ -184,10 +195,14 @@ let sortables = [];
 /* ---------- tiles ---------- */
 function tileView(it){
   const ok = CONFIRMED.has(it.fork);
+  const bridge = it.lane === "AB";
   const label = isEip(it.id) ? `EIP-${it.id}` : (it.kind === "northstar" ? "north star" : it.id);
-  const kick = `<span class="dot"></span>${esc(label)}${ok ? `<span class="chk">✓</span>` : ""}`;
+  const dots = bridge
+    ? `<span class="dot" style="background:var(--color-laneA)"></span><span class="dot" style="background:var(--color-laneB)"></span>`
+    : `<span class="dot"></span>`;
+  const kick = `${dots}${esc(label)}${ok ? `<span class="chk">✓</span>` : ""}`;
   const a = it.link ? `href="${esc(it.link)}" target="_blank" rel="noreferrer"` : "";
-  return `<a class="tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""}" ${a} title="${esc(it.sum||"")}">
+  return `<a class="tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""} ${bridge ? "tile-bridge" : ""}" ${a} title="${esc(it.sum||"")}">
       <div class="kick">${kick}</div><div class="ttl">${esc(it.title)}</div></a>`;
 }
 function tileEdit(it){
@@ -221,14 +236,24 @@ function build(){
       </div>`);
   }
   for (const lane of LANES){
-    out.push(`<div class="llabel row-line px-4 py-4" style="--accent:${lane.color}">
-        <div class="flex items-center gap-2"><span class="dot"></span><span class="text-[15px]/5 font-semibold" style="color:${lane.color}">${lane.name}</span></div>
+    const special = lane.id === LANES[LANES.length - 1].id;
+    out.push(`<div class="llabel row-line px-4 py-4 ${special?"lane-special":""}" style="--accent:${lane.color}">
+        <div class="flex items-center gap-2"><span class="dot"></span><span class="text-[15px]/5 font-semibold" style="color:${lane.color}">${lane.name}</span>${special?`<span class="lane-star">✦</span>`:""}</div>
       </div>`);
     for (const f of forks){
       const items = WORKING.filter(it => it.lane===lane.id && it.fork===f.id);
       const body = items.map(editing ? tileEdit : tileView).join("");
       const add = editing ? `<button class="addtile" data-lane="${lane.id}" data-fork="${f.id}">+ add</button>` : "";
-      out.push(`<div class="cell row-line ${f.sep?"fork-sep":""}" data-lane="${lane.id}" data-fork="${f.id}" style="--accent:${lane.color}">${body}${add}</div>`);
+      out.push(`<div class="cell row-line ${special?"lane-special":""} ${f.sep?"fork-sep":""}" data-lane="${lane.id}" data-fork="${f.id}" style="--accent:${lane.color}">${body}${add}</div>`);
+    }
+    if (lane.id === "A"){   // bridge row between the first two lanes
+      out.push(`<div class="llabel row-line bridge-label"></div>`);
+      for (const f of forks){
+        const bitems = WORKING.filter(it => it.lane==="AB" && it.fork===f.id);
+        const bbody = bitems.map(editing ? tileEdit : tileView).join("");
+        const badd = editing ? `<button class="addtile" data-lane="AB" data-fork="${f.id}">+ add</button>` : "";
+        out.push(`<div class="cell bridge-cell ${f.sep?"fork-sep":""}" data-lane="AB" data-fork="${f.id}" style="--accent:var(--color-laneB)">${bbody}${badd}</div>`);
+      }
     }
   }
   grid.innerHTML = out.join("");

@@ -90,6 +90,7 @@
 
     .tile-northstar { background: var(--color-white); box-shadow: none; outline: 1.5px dashed var(--accent); outline-offset: -1.5px; }
     .tile-northstar .ttl::before { content: "★ "; color: var(--accent); }
+    .tile-northstar:hover { transform: none; box-shadow: none; }
 
     .tile-soft { background: transparent; box-shadow: none; outline: 1px dashed var(--color-slate-300); outline-offset: -1px; opacity: 0.7; }
     .tile-soft .ttl { font-size: 15px; font-weight: 500; color: var(--color-slate-500); }
@@ -194,9 +195,11 @@ function tileView(it){
   const ns = it.kind === "northstar";
   const label = isEip(it.id) ? `EIP-${it.id}` : it.id;
   const kick = ns ? "" : `<div class="kick"><span class="dot"></span>${esc(label)}${ok ? `<span class="chk">✓</span>` : ""}</div>`;
-  const a = it.link ? `href="${esc(it.link)}" target="_blank" rel="noreferrer"` : "";
-  return `<a class="tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""}" ${a} title="${esc(it.sum||"")}">
-      ${kick}<div class="ttl">${esc(it.title)}</div></a>`;
+  const cls = `tile ${KIND[it.kind]||""} ${ok ? "tile-confirmed" : ""}`;
+  const inner = `${kick}<div class="ttl">${esc(it.title)}</div>`;
+  return it.link
+    ? `<a class="${cls}" href="${esc(it.link)}" target="_blank" rel="noreferrer" title="${esc(it.sum||"")}">${inner}</a>`
+    : `<div class="${cls}" title="${esc(it.sum||"")}">${inner}</div>`;
 }
 function tileEdit(it){
   const opts = KINDS.map(([v,l]) => `<option value="${v}"${(it.kind||"")===v ? " selected" : ""}>${l}</option>`).join("");

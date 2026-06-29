@@ -112,6 +112,7 @@
 
     // E — Tiering & Expiry
     { lane:"E", fork:"i", id:"8289", title:"Multi-Block Warming", link:"https://github.com/ethereum/EIPs/pull/11776", sum:"256-block rolling warm set committed by an SMT root; ~14% gas saved." },
+    { lane:"E", fork:"i", id:"HDD SSTORE/SLOAD", title:"HDD SSTORE/SLOAD", kind:"soft", sum:"Can SSTORE/SLOAD for cold, rarely-touched state be served from cheaper HDD instead of SSD?" },
     { lane:"E", fork:"j", id:"8188", title:"Last-Written Block", link:M+"eip8188-state-tiering-by-write-age/28234", sum:"Stamps each account/slot with its last-write block for hot/cold tiering." },
     { lane:"E", fork:"beyond", id:"7736", title:"Leaf-Level Expiry", link:E+"7736", kind:"soft", sum:"Verkle-era expiry of subtrees, reactivated by proof — superseded." },
     { lane:"E", fork:"northstar", id:"Bounded state", title:"Bounded state", kind:"northstar", sum:"Dormant state ages out so the live set stops growing without bound." },

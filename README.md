@@ -7,4 +7,4 @@ indicative, not a schedule.
 
 ## Files
 
-https://soispoke.github.io/privacy-roadmap/state-roadmap.html
+https://soispoke.github.io/privacy-roadmap/privacy-roadmap.html

@@ -1,5 +1,5 @@
 /* roadmap-data.js — single source of truth for the Ethereum Protocol Privacy Roadmap.
- * Loaded by state-roadmap.html. Regenerate via the page's Edit mode → Download.
+ * Loaded by privacy-roadmap.html. Regenerate via the page's Edit mode → Download.
  */
 (function () {
   const E = "https://eips.ethereum.org/EIPS/eip-";

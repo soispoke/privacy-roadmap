@@ -1,6 +1,5 @@
-/* roadmap-data.js — single source of truth for the Ethereum State Roadmap.
- * Loaded by both state-roadmap.html and state-roadmap-editor.html (keep them together).
- * Regenerate from the editor: Export → "Download roadmap-data.js" (overwrite this file).
+/* roadmap-data.js — single source of truth for the Ethereum Protocol Privacy Roadmap.
+ * Loaded by state-roadmap.html. Regenerate via the page's Edit mode → Download.
  */
 (function () {
   const E = "https://eips.ethereum.org/EIPS/eip-";
@@ -8,122 +7,105 @@
 
   const FORKS = [
     {
-      "id": "glamsterdam",
-      "name": "Glamsterdam",
-      "when": "2026",
-      "confirmed": true
+      "id": "q2-26",
+      "name": "Q2 2026",
+      "when": "Glamsterdam"
     },
     {
-      "id": "hegota",
-      "name": "Hegotá",
-      "when": "’26–’27"
+      "id": "q3-26",
+      "name": "Q3 2026",
+      "when": "Glamsterdam"
     },
     {
-      "id": "i",
-      "name": "I-fork",
-      "when": "2027+"
+      "id": "q4-26",
+      "name": "Q4 2026",
+      "when": "Glamsterdam"
     },
     {
-      "id": "j",
-      "name": "J-fork",
-      "when": "later"
+      "id": "q1-27",
+      "name": "Q1 2027",
+      "when": "Hegotá",
+      "milestone": true
     },
     {
-      "id": "beyond",
-      "name": "Beyond",
-      "when": "research"
+      "id": "q2-27",
+      "name": "Q2 2027",
+      "when": "Hegotá",
+      "milestone": true
     },
     {
-      "id": "northstar",
-      "name": "North Star",
-      "when": "goals",
-      "sep": true
+      "id": "q3-27",
+      "name": "Q3 2027",
+      "when": "Hegotá",
+      "milestone": true
     },
     {
-      "id": "superseded",
-      "name": "Superseded",
-      "when": "past",
-      "sep": true,
-      "muted": true
+      "id": "q4-27",
+      "name": "Q4 2027",
+      "when": "I*"
+    },
+    {
+      "id": "q1-28",
+      "name": "Q1 2028",
+      "when": "I*"
+    },
+    {
+      "id": "q2-28",
+      "name": "Q2 2028",
+      "when": "I*"
     }
   ];
 
   const LANES = [
     {
-      "id": "A",
-      "name": "Curb State Growth",
-      "color": "var(--color-laneA)"
-    },
-    {
-      "id": "B",
-      "name": "Honest Access Pricing",
-      "color": "var(--color-laneB)"
-    },
-    {
-      "id": "C",
-      "name": "State Structure",
-      "color": "var(--color-laneC)"
-    },
-    {
-      "id": "D",
-      "name": "Statelessness",
+      "id": "trust",
+      "name": "Trustlessness",
       "color": "var(--color-laneD)"
     },
     {
-      "id": "E",
-      "name": "Tiering & Expiry",
-      "color": "var(--color-laneE)"
+      "id": "cr",
+      "name": "Censorship Resistance",
+      "color": "var(--color-laneA)"
     },
     {
-      "id": "F",
-      "name": "State-Minimal Value",
+      "id": "tput",
+      "name": "Throughput",
+      "color": "var(--color-laneB)"
+    },
+    {
+      "id": "crypto",
+      "name": "Cryptography",
+      "color": "var(--color-laneC)"
+    },
+    {
+      "id": "state",
+      "name": "State",
       "color": "var(--color-laneF)"
     }
   ];
 
   const ITEMS = [
 
-    // A — Curb State Growth
-    { lane:"A", fork:"glamsterdam", id:"8037", title:"State Creation Cost", link:E+"8037", sum:"CPSB prices every new state byte; targets ~120 GiB/yr growth." },
-    { lane:"A", fork:"hegota", id:"7999", title:"Multidimensional Fee Market", link:E+"7999", sum:"One max_fee fungible across resource dimensions (calldata first) under a unified base-fee update." },
-    { lane:"A", fork:"i", id:"8058", title:"Bytecode Dedup Discount", link:M+"eip-8058-contract-bytecode-deduplication-discount/25933", kind:"soft", sum:"Redeploying identical bytecode skips the code-deposit cost." },
-    { lane:"A", fork:"northstar", id:"Sustainable state growth", title:"Sustainable state growth", kind:"northstar", sum:"New state pays its full lifetime cost — growth stays within what nodes can store." },
+    // trust — Trustlessness
+    { lane:"trust", id:"8141", title:"Frame Transactions", link:E+"8141", kind:"headliner", track:{"q3-26":"sfi","q4-26":"sfi","q2-27":"mainnet","q1-27":"sfi","q2-26":"cfi"}, sum:"CFI for Hegotá, Ethrex working on a devnet with 8250/8272." },
 
-    // B — Honest Access Pricing
-    { lane:"B", fork:"glamsterdam", id:"8038", title:"State-Access Cost Update", link:M+"eip-8038-state-access-gas-cost-update/25693", sum:"Raises cold SLOAD / account / EXTCODE costs for a larger state." },
-    { lane:"B", fork:"hegota", id:"7907", title:"Meter Code Size", link:M+"eip-remove-contract-size-limit/23156", kind:"soft", sum:"Gas-meters code above 24KB and lifts the cap to 64KB." },
-    { lane:"B", fork:"northstar", id:"Right-priced access", title:"Right-priced access", kind:"northstar", sum:"Every state access is priced at its true cost — no under- or over-pricing." },
-    { lane:"B", fork:"superseded", id:"8057", title:"Inter-Block Locality", link:M+"eip-8057-block-temporal-locality-gas-discounts/25912", kind:"soft", sum:"Discounts first access by how recently the item was touched." },
-    { lane:"B", fork:"superseded", id:"7863", title:"Block-Level Warming", link:M+"eip-7863-block-level-warming/22572", kind:"soft", sum:"Touched state stays warm for the whole block (warm set from the BAL)." },
+    // cr — Censorship Resistance
+    { lane:"cr", id:"7805", title:"FOCIL", link:E+"7805", kind:"headliner", track:{"q3-26":"sfi","q4-26":"sfi","q2-27":"mainnet","q1-27":"sfi","q2-26":"sfi"}, sum:"SFI for Hegotá" },
+    { lane:"cr", id:"8272", title:"Recent Roots", link:E+"8272", track:{"q4-26":"sfi","q1-27":"sfi","q2-27":"mainnet","q3-26":"pfi","q2-26":"eip"}, sum:"PFI for Hegotá this week; Ethrex working on a devnet" },
+    { lane:"cr", id:"effort-41", title:"Bloom filters or accumulators", link:"", track:{"q2-26":"research","q3-26":"research","q4-26":"research","q1-27":"eip","q2-27":"prototype","q3-27":"pfi","q4-27":"sfi","q1-28":"mainnet"}, sum:"Research stage: \n- Bloom filter idea:https://docs.fileverse.io/d/020001fc0012#k=UT7Btd6tyqHgOj47t-TX06F8D6OpcpM_2PKdf7s4tGE\n- Bloom filters vs accumulators: https://docs.fileverse.io/d/020011e70008#k=Ule0OP4_CFIlPaRbqA9o-FmHQAen7MikmcADa8_KF_8" },
 
-    // C — State Structure
-    { lane:"C", fork:"i", id:"8297", title:"Partitioned Binary Tree", link:"https://github.com/ethereum/EIPs/pull/11799", kind:"headliner", sum:"Splits the tree into zones (accounts, code, storage, nullifiers…)." },
-    { lane:"C", fork:"northstar", id:"Provable state", title:"Provable state", kind:"northstar", sum:"A post-quantum, ZK-friendly tree — any state fact proven cheaply." },
-    { lane:"C", fork:"superseded", id:"7864", title:"Unified Binary Tree", link:E+"7864", kind:"soft", sum:"Replaces the hexary MPT with one zoned binary tree. A multi-fork migration." },
-    { lane:"C", fork:"superseded", id:"6800", title:"Verkle Trees", link:E+"6800", kind:"soft", sum:"Prior tree direction (EIP-6800 / 7612) — superseded by binary trees." },
+    // tput — Throughput
+    { lane:"tput", id:"8250", title:"Keyed Nonces", link:M+"eip-8250-keyed-nonces-for-frame-transactions/28437", track:{"q4-26":"sfi","q1-27":"sfi","q2-27":"mainnet","q3-26":"pfi","q2-26":"eip"}, sum:"PFI for Hegotá this week; Ethrex working on a devnet" },
+    { lane:"tput", id:"stark-mempool", title:"Recursive STARK Mempool", link:"https://github.com/ethereum/EIPs/pull/11772", kind:"soft", track:{"q4-27":"sfi","q1-28":"mainnet","q2-26":"eip","q3-26":"prototype","q4-26":"prototype","q1-27":"devnet","q2-27":"pfi","q3-27":"sfi"}, sum:"Sharded mempool and recursive STARK aggregation in the mempool to reduce bandwidth. Waits on the frozen leanVM shape and the exposed ISA." },
 
-    // D — Statelessness
-    { lane:"D", fork:"glamsterdam", id:"7928", title:"Block-Level Access Lists", link:E+"7928", kind:"headliner", sum:"The block declares all state it touches → parallel execution, executionless updates. The keystone." },
-    { lane:"D", fork:"hegota", id:"8268", title:"Storage Roots in BAL", link:M+"eip-8268-storage-roots-in-block-access-lists/28585", sum:"Post-block storage roots in the BAL let partial nodes verify the state root." },
-    { lane:"D", fork:"i", id:"VOPS", title:"Validity-only partial statefulness", link:"https://ethresear.ch/t/a-pragmatic-path-towards-validity-only-partial-statelessness-vops/22236", sum:"Nodes keep only the state needed to check validity — separating storage from special state (nullifiers, spent bits)." },
-    { lane:"D", fork:"beyond", id:"DSN", title:"Decentralized State Network", sum:"A peer-to-peer network that collectively serves state and witnesses, so no single node must hold it all." },
-    { lane:"D", fork:"northstar", id:"Stateless clients", title:"Stateless clients", kind:"northstar", sum:"Validate blocks holding ~no state — witnesses travel with the block." },
-    { lane:"D", fork:"superseded", id:"2926", title:"Code Merkleization", link:M+"eip-2926-chunk-based-code-merkleization/4555", kind:"soft", sum:"Chunked code → small witnesses for stateless clients." },
+    // crypto — Cryptography
+    { lane:"crypto", id:"ISA", title:"ISA Surface: leanVM vs RISC-V", link:"https://github.com/Verified-zkEVM/evm-asm", kind:"soft", track:{"q2-26":"research","q3-26":"research","q4-26":"research"}, sum:"Dimensions to consider:\n- Future compatibility\n- Proving system simplicity\n- Surface for bugs\n- Developper experience" },
+    { lane:"crypto", id:"zk-leanvm", title:"Add ZK to leanVM", link:"https://github.com/leanEthereum/leanVM", kind:"soft", track:{"q2-26":"research","q3-26":"prototype","q4-26":"prototype"}, sum:"Making leanVM execution provable in zero knowledge. Work in progress." },
+    { lane:"crypto", id:"binfields-leanvm", title:"Binary Fields for leanVM", link:"https://github.com/leanEthereum/leanVM", kind:"soft", track:{"q3-26":"research","q4-26":"prototype"}, sum:"Moving leanVM onto binary fields to use more secure hashes while keeping enough performance" },
+    { lane:"crypto", id:"leanvm-frozen", title:"Final leanVM frozen", link:"https://github.com/leanEthereum/leanVM", kind:"headliner", laneSpan:true, track:{"q1-27":"prototype","q2-27":"pfi","q3-27":"sfi","q4-27":"sfi","q1-28":"mainnet"}, sum:"Converges the leanVM explorations into one decision at Q1 2027: the final leanVM design, the ISA it exposes, and the verifier to enshrine. Everything downstream waits on this." },
 
-    // E — Tiering & Expiry
-    { lane:"E", fork:"i", id:"8289", title:"Multi-Block Warming", link:"https://github.com/ethereum/EIPs/pull/11776", sum:"256-block rolling warm set committed by an SMT root; ~14% gas saved." },
-    { lane:"E", fork:"i", id:"HDD SSTORE/SLOAD", title:"HDD SSTORE/SLOAD", kind:"soft", sum:"Can SSTORE/SLOAD for cold, rarely-touched state be served from cheaper HDD instead of SSD?" },
-    { lane:"E", fork:"j", id:"8188", title:"Last-Written Block", link:M+"eip8188-state-tiering-by-write-age/28234", sum:"Stamps each account/slot with its last-write block for hot/cold tiering." },
-    { lane:"E", fork:"beyond", id:"8295", title:"State Tiering by Periods", link:"https://github.com/ethereum/EIPs/pull/11788", sum:"Tiered write-gas: surcharge mutations to inactive state by how long since its last write (builds on EIP-8188)." },
-    { lane:"E", fork:"beyond", id:"7736", title:"Leaf-Level Expiry", link:E+"7736", kind:"soft", sum:"Verkle-era expiry of subtrees, reactivated by proof — superseded." },
-    { lane:"E", fork:"northstar", id:"Bounded state", title:"Bounded state", kind:"northstar", sum:"Dormant state ages out so the live set stops growing without bound." },
-
-    // F — State-Minimal Value
-    { lane:"F", fork:"hegota", id:"8141", title:"Frame Transaction", link:M+"frame-transaction/27617", kind:"headliner", sum:"Decomposes a tx into frames: validate, pay gas, execute. AA foundation." },
-    { lane:"F", fork:"hegota", id:"8266", title:"Expiring Nonces", link:M+"eip-8266-expiring-nonces-for-frame-transactions/28575", sum:"Deadline-based replay protection — adds no permanent state." },
-    { lane:"F", fork:"hegota", id:"8250", title:"Keyed Nonces", link:M+"eip-8250-keyed-nonces-for-frame-transactions/28437", sum:"Independent, protocol-managed nonce domains for frame txs." },
-    { lane:"F", fork:"j", id:"Native UTXOs", title:"Native UTXOs", sum:"One-shot payments leaving only a spent bit — ~99.8% less permanent state." },
-    { lane:"F", fork:"northstar", id:"Footprint-free payments", title:"Footprint-free payments", kind:"northstar", sum:"Send and hold value without ever writing a permanent account or slot." },
+    // state — State
+    { lane:"state", id:"VOPS", title:"VOPS and FOCIL eligibility", link:"https://ethresear.ch/t/a-pragmatic-path-towards-validity-only-partial-statelessness-vops/22236", kind:"soft", track:{"q2-26":"eip","q3-26":"pfi","q1-27":"sfi","q4-26":"sfi","q2-27":"mainnet"}, oq:["Can we increase VERIFY gas limits to allow private txns in the public mempool?"], sum:"Validity-only partial statelessness: defining the boundary between the bounded state validators must keep (a few slots per account, nullifiers) and the rest. \n\nDraft; to be proposed as an informational EIP this month." },
   ];
 
   window.ROADMAP = { E, M, FORKS, LANES, ITEMS };

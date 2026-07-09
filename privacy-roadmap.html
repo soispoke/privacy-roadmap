@@ -291,8 +291,6 @@ let uidc = 1;
 const withUid = items => items.map(it => ({ ...it, _uid: uidc++ }));
 const clean = () => WORKING.map(({ _uid, ...r }) => r);
 function readDraft(){ try {
-  const base = localStorage.getItem(LS_BASE);
-  if (base !== FILE_FP) { localStorage.removeItem(LS); localStorage.removeItem(LS_BASE); return null; }  // draft was forked from a different file → it's stale
   const r = localStorage.getItem(LS); const a = r && JSON.parse(r);
   return (Array.isArray(a) && a.length) ? a : null;
 } catch { return null; } }

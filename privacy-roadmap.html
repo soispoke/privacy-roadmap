@@ -114,20 +114,8 @@
     .fhead[data-milestone="true"] .when-sub { color: var(--accent-ink, var(--color-slate-900)); font-weight: 700; }
     .fhead[data-milestone="true"] { box-shadow: inset 0 -2px 0 0 var(--color-ink); }
 
-    /* ---- dependency arrows ---- */
-    .roadmap { position: relative; }
-    #depsvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
-    #depsvg path { pointer-events: none; }
-    #depsvg path.dep { fill: none; stroke: #94a3b8; stroke-width: 1.5; opacity: 0.6; }
-    #depsvg path.dep-hit { fill: none; stroke: transparent; stroke-width: 14px; }
-    body.editing #depsvg path.dep-hit { pointer-events: stroke; cursor: pointer; }
-    body.editing #depsvg path.dep-hit:hover + path.dep { stroke: #e11d48; opacity: 1; }
+    /* ---- tile controls ---- */
     .tile[data-itemid] { position: relative; }
-    .etile { position: relative; }
-    body.editing .linkbtn { position: absolute; top: 6px; right: 6px; z-index: 6; border: 1px solid var(--color-slate-200); background: var(--color-white); color: var(--color-slate-500); border-radius: 999px; width: 22px; height: 22px; font-size: 12px; line-height: 1; cursor: pointer; padding: 0; }
-    body.editing .linkbtn:hover { background: var(--color-slate-50); color: var(--color-slate-800); }
-    body.editing .etile.link-src { outline: 2px solid #6366f1; outline-offset: 1px; }
-    body.editing.linking .etile { cursor: crosshair; }
 
     /* ---- timeline view ---- */
     .tl-era { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--color-slate-400); border-bottom: 2px solid var(--color-slate-300); padding-bottom: 2px; display: flex; align-items: flex-end; overflow: hidden; white-space: nowrap; }
@@ -143,8 +131,7 @@
     .tl-cell { border-radius: 3px; outline: 1px dashed transparent; cursor: pointer; }
     body.editing .tl-cell { outline-color: color-mix(in oklab, var(--color-slate-300) 70%, transparent); }
     body.editing .tl-cell:hover, body.editing .tl-chip:hover { outline: 1.5px solid var(--color-slate-400); }
-    .tl-link, .tl-del { flex: none; border: none; background: none; cursor: pointer; font-size: 11px; line-height: 1; padding: 0 2px; border-radius: 4px; color: var(--color-slate-400); }
-    .tl-link:hover { color: #4f46e5; background: color-mix(in oklab, #4f46e5 12%, white); }
+    .tl-del { flex: none; border: none; background: none; cursor: pointer; font-size: 11px; line-height: 1; padding: 0 2px; border-radius: 4px; color: var(--color-slate-400); }
     .tl-del:hover { color: #e11d48; background: color-mix(in oklab, #e11d48 12%, white); }
     .tl-tin { font: inherit; font-size: 11px; font-weight: 600; border: 1px solid var(--color-slate-200); border-radius: 4px; padding: 1px 5px; min-width: 0; flex: 1; background: var(--color-white); color: var(--color-slate-900); }
     .tl-tin:focus { outline: 2px solid color-mix(in oklab, #6366f1 45%, white); border-color: transparent; }
@@ -240,10 +227,10 @@
       </div>
     </div>
     <p id="draftNote" class="mt-3 hidden text-sm/6 text-slate-500">
-      You have a saved edit draft — click <span class="font-semibold">Edit</span> to resume · <button id="resetLink" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-900">discard it</button>
+      Showing your saved edit draft. Click <span class="font-semibold">Edit</span> to keep working, or <button id="resetLink" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-900">discard it</button> to return to the published roadmap.
     </p>
     <p id="editHint" class="mt-3 hidden text-sm/6 text-slate-500">
-      Click a quarter cell to set/advance its stage · <span class="font-semibold">↳</span> then another effort’s name draws a dependency · click an arrow to remove it · <span class="font-semibold">+ add effort</span> per lane · <span class="font-semibold">Save to file</span> writes <code class="rounded bg-slate-100 px-1">roadmap-data.js</code>.
+      Click a quarter cell to set or advance its stage · <span class="font-semibold">+ add effort</span> per lane · <span class="font-semibold">Save to file</span> writes <code class="rounded bg-slate-100 px-1">roadmap-data.js</code>.
     </p>
   </header>
 
@@ -258,8 +245,8 @@
 <script src="roadmap-data.js"></script>
 <script>
 /* roadmap-data.js (window.ROADMAP) is the published source of truth.
-   The page is read-only until you click "Edit". Edits autosave to this browser
-   and can be downloaded as a new roadmap-data.js. */
+   Edits autosave to this browser, remain visible after refresh, and can be
+   saved or downloaded as a new roadmap-data.js. */
 const LS = "stateRoadmapLayout.v1";
 const LS_BASE = LS + ".base";
 const fp = arr => JSON.stringify((arr||[]).map(({ _uid, ...r }) => r));
@@ -312,7 +299,7 @@ function readDraft(){ try {
 } catch { return null; } }
 function save(){ try { localStorage.setItem(LS, JSON.stringify(clean())); localStorage.setItem(LS_BASE, FILE_FP); } catch {} if (editing) flash("local draft saved ✓", true); }
 
-let WORKING = withUid(window.ROADMAP.ITEMS);   // view = the committed roadmap-data.js; the local draft is loaded only in Edit mode
+let WORKING = withUid(readDraft() || window.ROADMAP.ITEMS);
 let editing = false;
 let sortables = [];
 
@@ -321,7 +308,7 @@ function tileView(it){
   const ns = it.kind === "northstar";
   const label = isEip(it.id) ? `EIP-${it.id}` : it.id;
   const kick = ns ? "" : `<div class="kick">${esc(label)}</div>`;
-  const cls = `tile arrowanchor ${KIND[it.kind]||""}`;
+  const cls = `tile ${KIND[it.kind]||""}`;
   const si = SIDX[it.stage];
   const bar = si == null ? "" :
     `<div class="meta"><div class="stages">${STAGES.map((_,i) => `<span class="seg${i<=si ? " on" : ""}"></span>`).join("")}</div><span class="slabel">${esc(STAGE_LABEL[it.stage])}</span></div>`;
@@ -339,8 +326,7 @@ function labelHTML(it){
   const badge = (Array.isArray(it.oq) && it.oq.length) ? `<span class="oqbadge oqbadge-inline" data-edit="${esc(it.id)}" title="open questions">?</span>` : "";
   const pen = `<button class="editpen editpen-inline" data-edit="${esc(it.id)}" title="edit description & open questions">✎</button>`;
   if (editing){
-    return `<button class="tl-link linkbtn" data-link="${esc(it.id)}" title="draw a dependency arrow from this effort">↳</button>`
-      + `<input class="tl-tin" data-uid="${it._uid}" data-f="title" value="${esc(it.title)}" placeholder="effort name" />`
+    return `<input class="tl-tin" data-uid="${it._uid}" data-f="title" value="${esc(it.title)}" placeholder="effort name" />`
       + `<button class="tl-del" data-uid="${it._uid}" title="remove effort">✕</button>`
       + pen;
   }
@@ -351,7 +337,7 @@ function labelHTML(it){
 }
 
 /* ---------- render ---------- */
-function build(){ if (VIEW === "matrix") buildMatrix(); else buildTimeline(); drawDeps(); updateLegend(); }
+function build(){ if (VIEW === "matrix") buildMatrix(); else buildTimeline(); updateLegend(); }
 function updateLegend(){
   const el = $("#legend"); if (!el) return;
   if (VIEW === "matrix"){
@@ -363,7 +349,7 @@ function updateLegend(){
       <span class="flex items-center gap-1.5"><span style="font-size:8px;font-weight:700;border:1px solid #94a3b8;border-radius:999px;padding:0 5px;color:#475569;">EIP</span> / devnet gate</span>
       <span class="flex items-center gap-1.5"><span style="font-size:8px;font-weight:800;color:#fff;background:#16a34a;border-radius:999px;padding:0 5px;">★</span> proposed → included (PFI · CFI · SFI)</span>
       <span class="flex items-center gap-1.5"><span style="display:inline-block;width:0;height:11px;border-left:2px dashed #ef4444;"></span> today</span>
-      <span style="color:#94a3b8;">dashed bar = exploratory research · arrows = dependency · indicative, not a schedule</span>`;
+      <span style="color:#94a3b8;">dashed bar = exploratory research · indicative, not a schedule</span>`;
   }
 }
 
@@ -442,7 +428,7 @@ function buildTimelineRead(){
         const grad = preEip
           ? `background:linear-gradient(90deg, rgba(${rgb},.13), rgba(${rgb},.42)); border:1px dashed rgba(${rgb},.55);`
           : `background:linear-gradient(90deg, rgba(${rgb},.20), rgba(${rgb},.85));`;
-        out.push(`<div class="tl-bar arrowanchor" data-itemid="${esc(it.id)}" style="grid-row:${row};grid-column:${startC}/${endC};${grad}">${(Array.isArray(it.oq)&&it.oq.length)?`<span class="oqbadge" data-edit="${esc(it.id)}" title="open questions">?</span>`:""}</div>`);
+        out.push(`<div class="tl-bar" data-itemid="${esc(it.id)}" style="grid-row:${row};grid-column:${startC}/${endC};${grad}">${(Array.isArray(it.oq)&&it.oq.length)?`<span class="oqbadge" data-edit="${esc(it.id)}" title="open questions">?</span>`:""}</div>`);
         let prev = null;   // label each stage transition (EIP, devnet, PFI/CFI/SFI, mainnet); a run of the same stage shows one pill
         for (const fid of fks){ const st = it.track[fid]; if (st !== prev && st !== "research") out.push(gatePill(st, rgb, row, FIDX[fid] + 2)); prev = st; }
       }
@@ -454,7 +440,7 @@ function buildTimelineRead(){
       const fid = Object.keys(sp.track || {})[0];
       if (fid == null || FIDX[fid] == null) continue;
       const spBadge = (Array.isArray(sp.oq) && sp.oq.length) ? `<span class="oqbadge" data-edit="${esc(sp.id)}" title="open questions">?</span>` : "";
-      out.push(`<div class="tl-span arrowanchor" data-itemid="${esc(sp.id)}" style="grid-row:${laneTop}/${laneBot+1};grid-column:${FIDX[fid]+2};background:rgb(${rgb});"><button class="editpen" data-edit="${esc(sp.id)}" title="edit description & open questions">✎</button>${spBadge}<span>${esc(sp.title)}</span></div>`);
+      out.push(`<div class="tl-span" data-itemid="${esc(sp.id)}" style="grid-row:${laneTop}/${laneBot+1};grid-column:${FIDX[fid]+2};background:rgb(${rgb});"><button class="editpen" data-edit="${esc(sp.id)}" title="edit description & open questions">✎</button>${spBadge}<span>${esc(sp.title)}</span></div>`);
     }
   }
   const lastRow = row - 1;
@@ -501,7 +487,7 @@ function buildTimelineEdit(){
       FORKS.forEach((f,ci) => {
         const st = it.track ? it.track[f.id] : null;
         const pos = `grid-row:${row};grid-column:${ci+2};`;
-        if (st){ const c = STAGE_C[st]; out.push(`<div class="tl-chip arrowanchor" data-itemid="${esc(it.id)}" data-fork="${f.id}" style="${pos}background:${c[0]};color:${c[1]}">${STAGE_SHORT[st]}</div>`); }
+        if (st){ const c = STAGE_C[st]; out.push(`<div class="tl-chip" data-itemid="${esc(it.id)}" data-fork="${f.id}" style="${pos}background:${c[0]};color:${c[1]}">${STAGE_SHORT[st]}</div>`); }
         else if (editing){ out.push(`<div class="tl-cell" data-itemid="${esc(it.id)}" data-fork="${f.id}" style="${pos}"></div>`); }
       });
       rowType[row] = "item"; row++;
@@ -514,75 +500,9 @@ function buildTimelineEdit(){
   fitTimeline();
 }
 
-/* ---------- dependency arrows ---------- */
-const SVGNS = "http://www.w3.org/2000/svg";
-const ctr = r => ({ x: r.x + r.w/2, y: r.y + r.h/2 });
-function edgePoint(r, t){            // point on r's border in the direction of t
-  const c = ctr(r), dx = t.x - c.x, dy = t.y - c.y;
-  if (!dx && !dy) return c;
-  const s = Math.min(dx ? (r.w/2)/Math.abs(dx) : Infinity, dy ? (r.h/2)/Math.abs(dy) : Infinity);
-  return { x: c.x + dx*s, y: c.y + dy*s };
-}
-function drawDeps(){
-  if (!grid) return;
-  const old = grid.querySelector("#depsvg"); if (old) old.remove();
-  const gr = grid.getBoundingClientRect();
-  const groups = {};
-  grid.querySelectorAll(".arrowanchor[data-itemid]").forEach(el => { (groups[el.getAttribute("data-itemid")] ||= []).push(el); });
-  const rectOf = id => {
-    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-    for (const el of groups[id]){ const r = el.getBoundingClientRect(); x0=Math.min(x0,r.left); y0=Math.min(y0,r.top); x1=Math.max(x1,r.right); y1=Math.max(y1,r.bottom); }
-    return { x:x0-gr.left, y:y0-gr.top, w:x1-x0, h:y1-y0 };
-  };
-  const rects = {}; for (const id in groups) rects[id] = rectOf(id);
-  const edges = [];
-  for (const it of WORKING){ if (!Array.isArray(it.deps) || !rects[it.id]) continue; for (const dep of it.deps){ if (dep !== it.id && rects[dep]) edges.push([dep, it.id]); } }
-  if (!edges.length) return;
-  const paths = edges.map(([from, to]) => {
-    const fr = rects[from], tr = rects[to];
-    const p1 = edgePoint(fr, ctr(tr)), p2 = edgePoint(tr, ctr(fr));
-    const dx = p2.x-p1.x, dy = p2.y-p1.y, len = Math.hypot(dx, dy) || 1, off = Math.min(28, len*0.14);
-    const cx = (p1.x+p2.x)/2 - dy/len*off, cy = (p1.y+p2.y)/2 + dx/len*off;
-    const d = `M ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-    return `<path class="dep-hit" data-from="${esc(from)}" data-to="${esc(to)}" d="${d}"/><path class="dep" marker-end="url(#ah)" d="${d}"/>`;
-  }).join("");
-  const svg = document.createElementNS(SVGNS, "svg");
-  svg.id = "depsvg";
-  svg.setAttribute("width", grid.scrollWidth);
-  svg.setAttribute("height", grid.scrollHeight);
-  svg.innerHTML = `<defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5.5" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 z" fill="#94a3b8"/></marker></defs>${paths}`;
-  grid.appendChild(svg);
-}
-function redraw(){ if (VIEW === "timeline") fitTimeline(); drawDeps(); }
+function redraw(){ if (VIEW === "timeline") fitTimeline(); }
 window.addEventListener("resize", redraw);
 window.addEventListener("load", redraw);
-
-/* ---------- linking (draw dependency arrows in edit mode) ---------- */
-let linkFrom = null;
-function startLink(id){
-  linkFrom = id; document.body.classList.add("linking");
-  grid.querySelectorAll(".tl-label").forEach(el => el.classList.toggle("link-src", el.dataset.itemid === id));
-  const it = WORKING.find(i => i.id === id);
-  flash(`linking from “${it ? it.title : id}” — click another effort’s name (Esc to cancel)`, true);
-}
-function cancelLink(){
-  linkFrom = null; document.body.classList.remove("linking");
-  grid.querySelectorAll(".link-src").forEach(el => el.classList.remove("link-src"));
-  if (editing) flash("local draft saved ✓", true);
-}
-function addDep(dependentId, prereqId){
-  if (!dependentId || dependentId === prereqId) return;
-  const it = WORKING.find(i => i.id === dependentId); if (!it) return;
-  it.deps = it.deps || [];
-  if (!it.deps.includes(prereqId)) it.deps.push(prereqId);
-  save(); build(); flash("arrow added ✓");
-}
-function removeDep(dependentId, prereqId){
-  const it = WORKING.find(i => i.id === dependentId); if (!it || !it.deps) return;
-  it.deps = it.deps.filter(d => d !== prereqId);
-  if (!it.deps.length) delete it.deps;
-  save(); build(); flash("arrow removed");
-}
 
 /* ---------- editing (timeline) ---------- */
 function cycleCell(itemid, fork){
@@ -604,16 +524,6 @@ grid.addEventListener("input", e => {
 });
 grid.addEventListener("click", e => {
   if (!editing || VIEW !== "timeline") return;
-  const hit = e.target.closest("path.dep-hit");
-  if (hit){ removeDep(hit.dataset.to, hit.dataset.from); return; }
-  const lb = e.target.closest(".tl-link");
-  if (lb){ e.preventDefault(); const id = lb.dataset.link;
-    if (!linkFrom) startLink(id); else if (id === linkFrom) cancelLink(); else { addDep(id, linkFrom); cancelLink(); }
-    return; }
-  if (linkFrom){
-    const lab = e.target.closest(".tl-label");
-    if (lab && lab.dataset.itemid && lab.dataset.itemid !== linkFrom){ addDep(lab.dataset.itemid, linkFrom); cancelLink(); return; }
-  }
   const del = e.target.closest(".tl-del");
   if (del){ WORKING = WORKING.filter(i => String(i._uid) !== del.dataset.uid); save(); build(); return; }
   const add = e.target.closest(".tl-add");
@@ -625,8 +535,8 @@ grid.addEventListener("click", e => {
 /* ---------- toolbar ---------- */
 function setMode(on){
   editing = on;
-  linkFrom = null; document.body.classList.remove("linking");
-  WORKING = withUid(on ? (readDraft() || window.ROADMAP.ITEMS) : window.ROADMAP.ITEMS);
+  const draft = readDraft();
+  if (on && draft) WORKING = withUid(draft);
   document.body.classList.toggle("editing", on);
   $("#editToggle").textContent = on ? "Done" : "Edit";
   $("#editTools").classList.toggle("hidden", !on);
@@ -655,7 +565,6 @@ function updateNote(){ draftNote.classList.toggle("hidden", editing || !readDraf
 
 $("#editToggle").onclick = () => setMode(!editing);
 $("#viewToggle").onclick = () => setView(VIEW === "timeline" ? "matrix" : "timeline");
-document.addEventListener("keydown", e => { if (e.key === "Escape" && linkFrom) cancelLink(); });
 $("#downloadBtn").onclick = () => { downloadText("roadmap-data.js", buildDataFile()); flash("downloaded ✓"); };
 async function saveToFile(){
   const text = buildDataFile();
@@ -684,7 +593,7 @@ function flash(msg, sticky){
 
 /* ---------- export (build a fresh roadmap-data.js) ---------- */
 function linkExpr(link){ if (!link) return '""'; if (link.startsWith(E)) return 'E+'+JSON.stringify(link.slice(E.length)); if (link.startsWith(M)) return 'M+'+JSON.stringify(link.slice(M.length)); return JSON.stringify(link); }
-function serialize(it){ let s = `{ lane:${JSON.stringify(it.lane)}, id:${JSON.stringify(it.id)}, title:${JSON.stringify(it.title)}, link:${linkExpr(it.link)}`; if (it.kind) s += `, kind:${JSON.stringify(it.kind)}`; if (it.laneSpan) s += `, laneSpan:true`; if (it.deps && it.deps.length) s += `, deps:${JSON.stringify(it.deps)}`; if (it.track && Object.keys(it.track).length) s += `, track:${JSON.stringify(it.track)}`; if (it.oq && it.oq.length) s += `, oq:${JSON.stringify(it.oq)}`; s += `, sum:${JSON.stringify(it.sum||"")} },`; return s; }
+function serialize(it){ let s = `{ lane:${JSON.stringify(it.lane)}, id:${JSON.stringify(it.id)}, title:${JSON.stringify(it.title)}, link:${linkExpr(it.link)}`; if (it.kind) s += `, kind:${JSON.stringify(it.kind)}`; if (it.laneSpan) s += `, laneSpan:true`; if (it.track && Object.keys(it.track).length) s += `, track:${JSON.stringify(it.track)}`; if (it.oq && it.oq.length) s += `, oq:${JSON.stringify(it.oq)}`; s += `, sum:${JSON.stringify(it.sum||"")} },`; return s; }
 function itemsArrayJS(){
   const arr = clean().map((it,i) => [it,i]).sort((a,b) => (LIDX[a[0].lane]-LIDX[b[0].lane]) || ((FIDX[targetFork(a[0])] ?? 99)-(FIDX[targetFork(b[0])] ?? 99)) || (a[1]-b[1])).map(x => x[0]);
   let out = "[\n", cur = null;
